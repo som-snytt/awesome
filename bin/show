@@ -1,0 +1,15 @@
+#!/bin/sh
+#
+
+AWESOME=/scala/awesome
+SCALALIB=/scala/trunk/build/pack/lib
+
+extra_cp=""
+if [ $1 == "-cp" ] ; then
+  shift
+  extra_cp=":${1}"
+  shift
+fi
+
+echo JAVA_OPTS="-Xms16M -Xmx2048M -Djava.awt.headless=true" java -cp ${AWESOME}/lib/'*':${AWESOME}/classes${extra_cp}:${SCALALIB}/'*' awesome.pickler.Show $*
+JAVA_OPTS="-Xms16M -Xmx2048M -Djava.awt.headless=true" java -cp ${AWESOME}/lib/'*':${AWESOME}/classes${extra_cp}:${SCALALIB}/'*' awesome.pickler.Show $*
