@@ -14,6 +14,12 @@ case class MethodInfo(
   
   type SigType = MethodSignature
   def createSignature = x => MethodSignature(x, name.toScalaString)
+  def thisMethodSymbol = owner.methodSymbolFor(id)
+  def symbolTypeParams =
+    if (thisMethodSymbol.isEmpty) Nil
+    else ScalapView.typeSymbols(thisMethodSymbol.get.children)
+  
+  def isImplicit = thisMethodSymbol exists (_.isImplicit)
   
   def isVarArgs = access.isVarArgs
   def varArgType = jmethod flatMap (_.varArgType)
@@ -30,11 +36,11 @@ case class MethodInfo(
 
   private lazy val jmethod = owner reflectMethodFor this map (x => new JavaMethod(x))
   
-  lazy val reflectMethod = jmethod map (_.method)
-  lazy val reflectTypeParams = jmethod map (_.typeParams)
+  lazy val reflectMethod        = jmethod map (_.method)
+  lazy val reflectTypeParams    = jmethod map (_.typeParams)
   lazy val reflectArgumentTypes = jmethod map (_.argumentTypes)
-  lazy val reflectReturnType = jmethod map (_.returnType)
-  lazy val reflectMethodName = jmethod map (_.methodName)
+  lazy val reflectReturnType    = jmethod map (_.returnType)
+  lazy val reflectMethodName    = jmethod map (_.methodName)
   
   def code          = findAttr({ case x: Code => x })
   def exceptions    = attributes flatMap { case Exceptions(xs) => xs ; case _ => Nil }
@@ -59,44 +65,12 @@ case class MethodInfo(
   //   if (xs.size == paramIndices.size) xs
   //   else descriptor.argTypes map (_.toString)
   // }
-  def paramTypes    = reflectArgumentTypes match {
-    case Some(xs)   =>
-      varArgType match {
-        case Some(t)  => (xs.init map javaTypeToString) :+ (javaTypeToString(t) + "*")
-        case _        => xs map javaTypeToString
-      }
-    case _          => descriptor.argTypes map (_.toString)
-    // case _          => asmArgumentTypes(descriptor.text) map asmTypeToString
+  def paramTypes: List[String] = {
+    val xs = reflectArgumentTypes
+    if (xs.isEmpty)               descriptor.argTypes map (_.toString)
+    else if (varArgType.isEmpty)  xs.get map javaTypeToString
+    else                          xs.get.init :+ varArgType.get map javaTypeToString
   }
-  
-  /** The pieces which go into printing a method:
-   *  <modifiers> def <name><tparams>(<paramNames>, <paramTypes>): <returnType> <throws>
-   *
-   *  <modifiers> in Flags
-   *  <name> in Ident
-   */
-
-  def throwsString  = if (exceptions.isEmpty) "" else exceptions.mkString("throws ", ", ", "")
-  def tparamString  = tparamsToString(reflectTypeParams getOrElse Nil)
-  def paramString   = paramsToString(
-    if (paramNames.size != paramTypes.size) paramTypes
-    else (paramNames, paramTypes).zipped map ((x, y) => "%s: %s".format(x, y))
-  )
-  def returnString  = reflectReturnType match {
-    case Some(t)  => javaTypeToString(t)
-    case _        => asmTypeToString(asmReturnType(descriptor.text))
-  }
-      
   private val skipPrinting = List("Code", "Deprecated")
-  
-  def nameToPrint: String =
-    if (name.isConstructor) "this"
-    else if (name != "%s") name
-    else reflectMethodName getOrElse "??"
-    
-  override def toString = spaceSepString(
-    accessString,
-    "def %s%s%s: %s".format(nameToPrint, tparamString, paramString, returnString),
-    throwsString
-  )
+  override def toString = ScalaFormatter.signature(this)
 }

@@ -31,12 +31,13 @@ case class FieldDescriptor(text: String, name: String) extends Descriptor {
 case class MethodDescriptor(text: String, name: String) extends Descriptor {
   def this(text: String) = this(text, "")
   lazy val MethodType(argTypes, returnType) =
-    DescriptorParser method text getOrElse error("Descriptor parse error: " + text)
+    DescriptorParser method text getOrElse sys.error("Descriptor parse error: " + text)
     
   def decoded = "(%s) => %s".format(argTypes mkString ", ", returnType)
+  override def toString = decoded
 }
 
-object Descriptor {  
+object Descriptor {
   def getDescriptor(c: JClass[_]): String = (Base.forClass get c) match {
     case Some(x)        => x.tag.toString
     case _ if c.isArray => "[" + getDescriptor(c.getComponentType)
@@ -55,7 +56,7 @@ object Descriptor {
     else new FieldDescriptor(s)
   }
     
-  implicit def fromFunction(x: AnyRef) = getDescriptorFromFunction(x)
+  implicit def fromFunction(x: AnyRef): MethodDescriptor = getDescriptorFromFunction(x)
   implicit def fromJavaMethod(x: reflect.Method) = MethodDescriptor(getMethodDescriptor(x), x.getName)
   implicit def fromJavaConstructor(x: reflect.Constructor[_]) = MethodDescriptor(getConstructorDescriptor(x), x.getName)
   implicit def fromJavaField(x: reflect.Field) = FieldDescriptor(getDescriptor(x.getType), x.getName)
@@ -63,6 +64,6 @@ object Descriptor {
   def applyMethods(x: AnyRef) =
     x.getClass.getMethods.toList filter (_.getName == "apply")
   
-  def getDescriptorFromFunction(x: AnyRef) =
-    fromJavaMethod(applyMethods(x) find (x => !x.isBridge) get)
+  def getDescriptorFromFunction(x: AnyRef): MethodDescriptor =
+    applyMethods(x) find (x => !x.isBridge) map fromJavaMethod getOrElse MethodDescriptor("()V", "")
 }

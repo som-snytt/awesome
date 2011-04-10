@@ -1,7 +1,7 @@
 package awesome
 package cmd
 
-import scala.tools.nsc.io._
+// import scala.tools.nsc.io.{ }
 import awesome.io._
 import awesome.jvm.{ ClassFileParser, ClassFileCache }
 

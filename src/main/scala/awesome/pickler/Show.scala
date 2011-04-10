@@ -5,9 +5,12 @@ import scala.reflect.generic.PickleBuffer
 import scala.tools.nsc.util.ShowPickled
 import scala.tools.nsc.io.File
 import jvm.ClassFileParser
+import awesome.scalap.ScalaSigFinder
 
 object Show {  
-  def apply(name: String): Unit = apply(ScalaSig getBytes name)
+  def apply(name: String): Unit = {
+    ScalaSigFinder nameToBytes name foreach apply
+  }
 
   def apply(data: Array[Byte]): Unit = {
     val pickle = new PickleBuffer(data, 0, data.length)

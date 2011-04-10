@@ -48,11 +48,11 @@ class ScalaSig(
   override def toString = "ScalaSig(%d entries)".format(entries.size)
 }
 
-object ScalaSig {
-  def getBytes(name: String): Array[Byte] = (
-    for {
-      cp <- ClassFileParser(name).toOption
-      attr <- cp.process.scalaSigAttr
-    } yield attr.bytes.toArray
-  ) getOrElse Array()      
-}
+// object ScalaSig {
+//   def getBytes(name: String): Array[Byte] = (
+//     for {
+//       cp <- ClassFileParser(name).toOption
+//       attr <- cp.process.scalaSigAttr
+//     } yield attr.bytes.toArray
+//   ) getOrElse Array()      
+// }

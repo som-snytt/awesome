@@ -10,3 +10,4 @@ target
 project/boot
 src_managed
 lib_managed
+/test-src

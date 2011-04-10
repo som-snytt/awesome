@@ -1,4 +1,30 @@
-JAVA_OPTS="-Xms16M -Xmx2048M -Djava.awt.headless=true" \
-  /scala/inst/rc/bin/scala -cp \
-  'lib/*':./classes:./test:'/local/lib/scala/*':'/local/lib/java/*' \
-  -i cmd.scala
+#!/usr/bin/env bash
+#
+
+function scriptDir () {
+  SDIR=$(dirname "$0");
+  echo $(cd $SDIR ; pwd -P)
+}
+
+VER="scala-2.8.1"
+if [[ $1 == "-28" ]]; then
+  shift 1
+  VER="scala-2.8.1"
+elif [[ $1 == "-29" ]]; then
+  shift 1
+  VER="scala-2.9.0-SNAPSHOT"
+fi
+
+# W...T...F...
+VER2=${VER//-/_}
+
+BASE=$(scriptDir)
+SCALADIR="$BASE/project/boot/$VER"
+DEPS="$BASE/lib_managed/$VER2/compile"
+OUTDIR="$BASE/target/$VER2/classes"
+
+java -Xmx1500m -Xms2m -Djava.awt.headless=true \
+  -classpath "$SCALADIR"/lib/'*':$DEPS/'*':$OUTDIR \
+  $JAVA_OPTS \
+  scala.tools.nsc.MainGenericRunner -usejavacp \
+  "$@"

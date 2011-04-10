@@ -40,14 +40,14 @@ object Util {
     }
   
     (caller.methods filter isPossibleMatch) match {
-      case Nil      => error("'%s' has no method named '%s'".format(owner, name))
+      case Nil      => sys.error("'%s' has no method named '%s'".format(owner, name))
       case List(x)  => x.descriptor.text
       case xs       => 
         // one last try
         val mostSpecific = xs filter (x => isMoreSpecific(x, xs filterNot (_ eq x)))
         
         if (mostSpecific.size == 1) mostSpecific.head.descriptor.text
-        else error("'%s' has multiple members '%s' and disambiguation failed among: %s".format(
+        else sys.error("'%s' has multiple members '%s' and disambiguation failed among: %s".format(
           owner, name, xs.mkString("\n    ", "\n    ", "")
         ))
     }

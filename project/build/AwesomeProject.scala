@@ -9,5 +9,11 @@ class AwesomeProject(info: ProjectInfo) extends DefaultProject(info) with assemb
   val scalap    = "org.scala-lang" % "scalap" % "2.8.1" // withSources()
   val paranamer = "com.thoughtworks.paranamer" % "paranamer" % "2.3"
   val asm       = "asm" % "asm-debug-all" % "3.3"
-  val specs     = "org.scala-tools.testing" %% "specs" % "1.6.6" % "test" // withSources()
+
+	override def libraryDependencies = super.libraryDependencies ++ (
+	  info.buildScalaVersion match {
+	    case Some(v) if v startsWith "2.8"  => Set("org.scala-tools.testing" %% "specs" % "1.6.6" % "test") // withSources()
+      case _                              => Set()
+	  }
+	)
 }

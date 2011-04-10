@@ -87,10 +87,10 @@ object SignatureParser extends RegexParsers with ImplicitConversions with Parser
     | TypeSignature
   )
   
-  def jclass(in: String) = parseAll(ClassSignature, in) getOrElseMsg error
-  def field(in: String) = parseAll(FieldSignature, in) getOrElseMsg error
-  def method(in: String) = parseAll(MethodTypeSignature, in) getOrElseMsg error
+  def jclass(in: String) = parseAll(ClassSignature, in) getOrElseMsg sys.error
+  def field(in: String) = parseAll(FieldSignature, in) getOrElseMsg sys.error
+  def method(in: String) = parseAll(MethodTypeSignature, in) getOrElseMsg sys.error
   
   def apply(sig: Signature): Sig.AnySignature = apply(sig.text)
-  def apply(text: String): Sig.AnySignature = parseAll(root, text) getOrElseMsg error
+  def apply(text: String): Sig.AnySignature = parseAll(root, text) getOrElseMsg sys.error
 }

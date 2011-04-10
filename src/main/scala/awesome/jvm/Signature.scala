@@ -7,9 +7,9 @@ trait Signature extends Descriptor {
   def parsed: Sig.AnySignature
   def decoded: String = parsed.toString
   def name: String = "%s"
-  override def isSignature: Boolean = true
   
-  override def toString = decoded format name
+  override def isSignature = true
+  override def toString    = decoded format name
 }
 
 class FieldSignature(val text: String) extends Signature {

@@ -6,7 +6,7 @@ import io.{ Jar, Jars }
 import jvm.ClassFileParser
 import jvm.attr.{ InnerClasses, InnerClass }
 import scala.tools.nsc.io._
-import awesome.io.ByteCode
+import awesome.scalap.ByteCode
 import awesome.jvm.ClassFileParser
 
 object javap {

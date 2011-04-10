@@ -3,13 +3,176 @@ package jvm
 
 import java.lang.reflect
 import attr.{ InnerClasses, Exceptions, ScalaSig, EnclosingMethod }
-import validation.Validatable
 import pickler.{ ScalaSigParser }
+import awesome.scalap.ScalaSigFinder
+import scala.reflect.NameTransformer
 
-trait ScalaSigAttributed extends Attributed {  
-  def scalaSigAttr = findAttr({ case x: ScalaSig => x })
-  lazy val scalaSig = scalaSigAttr flatMap (x => ScalaSigParser(x.bytes).toOption)
-  def isScala = scalaSigAttr.isDefined
+// object CopiedScalaSigPrinter {
+//   import scala.tools.scalap.scalax.rules.scalasig.{ ScalaSigParser => _, _ }
+//   
+//   def typeToString(t: Type): String = {
+//     // print type itself
+//     t match {
+//       case ThisType(symbol) => sep + processName(symbol.path) + ".type"
+//       case SingleType(pre, sym) => sep + processName(symbol.path) + ".type"
+//       case ConstantType(constant) => "Constant(" + constant.toString + ")"
+//       case TypeRefType(pre, sym, args) => 
+//       
+//       sep + (symbol.path match {
+//         case "scala.<repeated>" => flags match {
+//           case TypeFlags(true) => toString(typeArgs.head) + "*"
+//           case _ => "scala.Seq" + typeArgString(typeArgs)
+//         }
+//         case "scala.<byname>" => "=> " + toString(typeArgs.head)
+//         case _ => {
+//           val path = StringUtil.cutSubstring(symbol.path)(".package") //remove package object reference
+//           StringUtil.trimStart(processName(path) + typeArgString(typeArgs), "<empty>.")
+//         }
+//       })
+//       case TypeBoundsType(lower, upper) => {
+//         val lb = toString(lower)
+//         val ub = toString(upper)
+//         val lbs = if (!lb.equals("scala.Nothing")) " >: " + lb else ""
+//         val ubs = if (!ub.equals("scala.Any")) " <: " + ub else ""
+//         lbs + ubs
+//       }
+//       case RefinedType(classSym, typeRefs) => sep + typeRefs.map(toString).mkString("", " with ", "")
+//       case ClassInfoType(symbol, typeRefs) => sep + typeRefs.map(toString).mkString(" extends ", " with ", "")
+//       case ClassInfoTypeWithCons(symbol, typeRefs, cons) => sep + typeRefs.map(toString).
+//               mkString(cons + " extends ", " with ", "")
+// 
+//       case ImplicitMethodType(resultType, _) => toString(resultType, sep)
+//       case MethodType(resultType, _) => toString(resultType, sep)
+// 
+//       case PolyType(typeRef, symbols) => typeParamString(symbols) + toString(typeRef, sep)
+//       case PolyTypeWithCons(typeRef, symbols, cons) => typeParamString(symbols) + processName(cons) + toString(typeRef, sep)
+//       case AnnotatedType(typeRef, attribTreeRefs) => {
+//         toString(typeRef, sep)
+//       }
+//       case AnnotatedWithSelfType(typeRef, symbol, attribTreeRefs) => toString(typeRef, sep)
+//       //case DeBruijnIndexType(typeLevel, typeIndex) =>
+//       case ExistentialType(typeRef, symbols) => {
+//         val refs = symbols.map(toString _).filter(!_.startsWith("_")).map("type " + _)
+//         toString(typeRef, sep) + (if (refs.size > 0) refs.mkString(" forSome {", "; ", "}") else "")
+//       }
+//       case _ => sep + t.toString
+//     }
+//   }
+// 
+//   def getVariance(t: TypeSymbol) = if (t.isCovariant) "+" else if (t.isContravariant) "-" else ""
+//   
+// }
+
+object ScalapView {
+  import scala.tools.scalap.scalax.rules.scalasig.{ ScalaSigParser => _, _ }
+  
+  def stripPrivatePrefix(name: String) =
+    name.replaceAll("""^.*\Q$$\E""", "")
+
+  def processName(name: String) = 
+    NameTransformer.decode(stripPrivatePrefix(name))
+  
+  def symString(sym: Symbol) =
+    processName(sym.path)
+  
+  def tpString(tp: Type): String = tp match {
+    case ThisType(sym)                => symString(sym) + ".type"
+    case SingleType(tref, sym)        => symString(sym) + ".type"
+    case ConstantType(constant)       => constant.asInstanceOf[AnyRef].getClass.getName
+    case TypeRefType(pre, sym, args)  => symString(sym) + typeArgs(args)
+    case TypeBoundsType(lo, hi)       =>
+      val lb = tpString(lo) match {
+        case "scala.Nothing"  => ""
+        case x                => " >: " + x
+      }
+      val ub = tpString(hi) match {
+        case "scala.Any"      => ""
+        case x                => " <: " + x
+      }
+      lb + ub
+    case PolyType(mt, syms)           => 
+      typeParams(syms) + tpString(mt)
+    case mt @ ImplicitMethodType(resType, params) =>
+      val ps = methodSymbols(params) map (x => x.name + ": " + tpString(x.infoType))
+      ps.mkString("(implicit ", ", ", "): " + tpString(resType))
+    case mt @ MethodType(resType, params)  =>
+      val ps = methodSymbols(params) map (x => x.name + ": " + tpString(x.infoType))
+      ps.mkString("(", ", ", "): " + tpString(resType))
+    
+    case x => "TODO: " + x.getClass
+    // case class RefinedType(classSym : Symbol, typeRefs : List[Type]) extends Type
+    // case class ClassInfoType(symbol : Symbol, typeRefs : Seq[Type]) extends Type
+    // case class ClassInfoTypeWithCons(symbol : Symbol, typeRefs : Seq[Type], cons: String) extends Type
+    // case class PolyTypeWithCons(typeRef : Type, symbols : Seq[TypeSymbol], cons: String) extends Type
+    // case class ImplicitMethodType(resultType : Type, paramSymbols : Seq[Symbol]) extends Type
+    // case class AnnotatedType(typeRef : Type, attribTreeRefs : List[Int]) extends Type
+    // case class AnnotatedWithSelfType(typeRef : Type, symbol : Symbol, attribTreeRefs : List[Int]) extends Type
+    // case class DeBruijnIndexType(typeLevel : Int, typeIndex : Int) extends Type
+    // case class ExistentialType(typeRef : Type, symbols : Seq[Symbol]) extends Type
+  }
+  
+  def methodSymbols(xs: Seq[Symbol]): List[MethodSymbol] =
+    xs.toList collect { case x: MethodSymbol => x }
+
+  def typeSymbols(xs: Seq[Symbol]): List[TypeSymbol] =
+    xs.toList collect { case x: TypeSymbol => x }
+  
+  def typeArgs(tps: Seq[Type]): String = {
+     tparamsToString(tps map tpString)
+  }
+  
+  def typeParams(syms: Seq[Symbol]): String = {
+    tparamsToString(typeSymbols(syms) map typeParam)
+  }
+  
+  def typeParam(x: TypeSymbol): String = {
+    val variance =
+      if (x.isCovariant) "+" 
+      else if (x.isContravariant) "-"
+      else ""
+      
+    variance + x.name
+  }
+  
+  def typeParamsString(m: MethodSymbol): String = {
+    tparamsToString(typeSymbols(m.children) map typeParam)
+  }
+  
+  def methodParamsString(x: MethodSymbol): String = {
+    tpString(x.infoType)
+    // val ps = methodSymbols(x.children) filter (_.isParam)
+    // 
+    // paramsToString(methodSymbols(x.children) filter (_.isParam)
+    //   
+    // val infoType = x.infoType
+    // x.name + ": " + tpString(infoType)
+  }
+}
+
+trait ScalaSigAnnotated {
+  import scala.tools.scalap.scalax.rules.scalasig.{ ScalaSigParser => _, _ }
+  
+  def className: String
+
+  def scalaSigBytes        = ScalaSigFinder.nameToBytes(className)
+  def scalaSigPickleBuffer = ScalaSigFinder.nameToPickleBuffer(className)
+  def scalapScalaSig       = ScalaSigFinder.fromName(className)
+  def scalapSymbols        = scalapScalaSig.toList flatMap (_.symbols)
+  
+  def thisClassSymbol  = classSymbols find (_.path == className)
+  def classSymbols     = scalapSymbols collect { case x: ClassSymbol => x }
+  def objectSymbols    = scalapSymbols collect { case x: ObjectSymbol => x }
+  def methodSymbols    = scalapSymbols collect { case x: MethodSymbol => x }
+  def typeParamSymbols = scalapSymbols collect { case x: TypeSymbol => x }
+  def aliasSymbols     = scalapSymbols collect { case x: AliasSymbol => x }
+  
+  def methodSymbolFor(id: Ident) = methodSymbols find (_.name.toDecoded == id.toDecoded)
+  def classTypeParamSymbols = thisClassSymbol.toList flatMap (_.children) collect {
+    case x: TypeSymbol => x
+  }
+
+  lazy val scalaSig = scalaSigBytes flatMap (x => ScalaSigParser(x).toOption)
+  def isScala = scalapScalaSig.isDefined
 }
 
 case class ClassInfo(
@@ -18,7 +181,7 @@ case class ClassInfo(
   superId: Ident,
   interfaces: List[Ident],
   attributes: List[Attribute]
-) extends Member with Validatable with ScalaSigAttributed {
+) extends Member with ScalaSigAnnotated {
   
   type SigType = ClassSignature
   def createSignature = x => ClassSignature(x, name.toScalaString)
@@ -26,6 +189,7 @@ case class ClassInfo(
   lazy val clazz: JClass[_] = name.clazz
   lazy val companion = ClassFileParser(name.toCompanion).get.process
   def clazzName = clazz.getName
+  def className = name.toExternal
 
   def isScalaObject = isScala && (name endsWith "$")  
   def enclosingMethod = findAttr({ case x: EnclosingMethod => x })
@@ -63,7 +227,7 @@ case class ClassInfo(
       case None     => reflectDeclaringClass
       // This is a local class or an anonymous class (d or e)
       case Some(m)  => reflectEnclosingClass match {
-        case None | Some(`clazz`) => error("Malformed enclosing method information")
+        case None | Some(`clazz`) => sys.error("Malformed enclosing method information")
         case x                      => x
       }
     }
@@ -87,7 +251,7 @@ case class ClassInfo(
       // anonymous class to be the empty string).
       
       case Some(str) =>
-        if (str == "" || str(0) != '$') error("Malformed class name: " + str)
+        if (str == "" || str(0) != '$') sys.error("Malformed class name: " + str)
         // This ends up as the empty string iff this is an anonymous class
         else str.tail dropWhile (ch => '0' <= ch && ch <= '9')
   }

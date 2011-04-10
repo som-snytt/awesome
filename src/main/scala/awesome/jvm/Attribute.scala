@@ -8,11 +8,11 @@ trait Attribute {
   def isUnknown = false
   def isAnnotation = false
   
-  def isInnerClasses = name == "InnerClasses"
-  def isSynthetic = name == "Synthetic"
-  def isDeprecated = name == "Deprecated"
-  def isSignature = name == "Signature"
-  def isConstantValue = name == "ConstantValue"
+  def isInnerClasses    = name == "InnerClasses"
+  def isSynthetic       = name == "Synthetic"
+  def isDeprecated      = name == "Deprecated"
+  def isSignature       = name == "Signature"
+  def isConstantValue   = name == "ConstantValue"
   def isEnclosingMethod = name == "EnclosingMethod"
 }
 

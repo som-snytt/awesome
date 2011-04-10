@@ -57,8 +57,8 @@ class Jars(
   def classNames = jars flatMap (_.classNames)
   def infos: Iterator[JarInfo] = entries map (x => JarInfo(x.getName, x.getSize))
   
-  def find[T](p: T => Boolean)(implicit ev: Jar <%< T) = {
-    val pp: Jar => Boolean = (x: Jar) => p(ev(x))
+  def find[T](p: T => Boolean)(implicit f: Jar => T) = {
+    val pp: Jar => Boolean = (x: Jar) => p(f(x))
     jars find pp
   } 
   
@@ -75,8 +75,8 @@ class Jars(
   def ??(re: Regex): Jars =
     ??[JarEntry](x => re findFirstMatchIn x.getName.stripSuffix(".class") isDefined)
   
-  def ??[T](p: T => Boolean)(implicit ev: JarEntry <%< T) = {
-    val pp: JarEntry => Boolean = (x: JarEntry) => p(ev(x))
+  def ??[T](p: T => Boolean)(implicit f: JarEntry => T) = {
+    val pp: JarEntry => Boolean = (x: JarEntry) => p(f(x))
     copy(jars = allJars map (_ addFilter pp))
   }
   

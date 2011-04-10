@@ -3,7 +3,7 @@ package jvm
 
 import scala.util.parsing.combinator._
 import scala.annotation.tailrec
-import io.ByteCode
+import awesome.scalap.ByteCode
 import parser._
 
 /** In this model we hew very close to the JVM classfile specification
@@ -102,7 +102,7 @@ object ClassFileParser extends JVMParsers {
     }
     
     def apply(index: Int) = index match {
-      case 0    => error("parse error, requested invalid cp entry.\n" + this)
+      case 0    => sys.error("parse error, requested invalid cp entry.\n" + this)
       case idx  => entries(index - 1)
     }
     
@@ -114,7 +114,7 @@ object ClassFileParser extends JVMParsers {
   
   def categorize_cp_info(tag: Int): Parser[cp_info] = tag match {
     case CONSTANT_Utf8                => u2 >> bytes ^^ toUTF8String ^^ cp_utf8
-    case CONSTANT_Unicode             => error("unimplemented")
+    case CONSTANT_Unicode             => sys.error("unimplemented")
     case CONSTANT_Integer             => u4 ^^ cp_int
     case CONSTANT_Float               => u4f ^^ cp_float
     case CONSTANT_Long                => u8 ^^ cp_long

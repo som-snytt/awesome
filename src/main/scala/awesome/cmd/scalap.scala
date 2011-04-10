@@ -1,11 +1,6 @@
 package awesome
 package cmd
 
-import scala.tools.nsc.io.File
-import io.{ Jar, Jars }
-import jvm.ClassFileParser
-import jvm.attr.{ InnerClasses, InnerClass }
-
 // scalap scala.collection.MapLike 
 // 
 // CLASSPATH = merged classpath (directory classpath: .)
@@ -59,8 +54,15 @@ import jvm.attr.{ InnerClasses, InnerClass }
 //   override def equals(that : scala.Any) : scala.Boolean = { /* compiled code */ }
 // }
 
+
+// import scala.tools.nsc.io.File
+// import awesome.scalap.CopiedByteCode
+// import io.{ Jar, Jars }
+// import jvm.ClassFileParser
+// import jvm.attr.{ InnerClasses, InnerClass }
+
 import scala.tools.nsc.io._
-import awesome.io.ByteCode
+import awesome.scalap.ByteCode
 import awesome.jvm.ClassFileParser
 
 object scalap {

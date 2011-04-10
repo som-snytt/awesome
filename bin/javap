@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+
+# JAVA_OPTS="-Xms16M -Xmx2048M -Djava.awt.headless=true" \
+#   /scala/inst/rc/bin/scala -cp \
+#   'lib/*':./classes:./test:'/local/lib/scala/*':'/local/lib/java/*' \
+#   -i cmd.scala
+
+BINDIR=`dirname $0`
+BASE=$(cd $BINDIR/.. ; pwd)
+CP=$BASE/lib_managed/scala_2.8.0/compile/'*':$BASE/target/scala_2.8.0/'*'
+SCALA=/scala/inst/28/bin/scala
+
+$SCALA -cp $CP awesome.cmd.javap "$@"

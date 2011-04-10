@@ -3,7 +3,6 @@ package jvm
 
 import scala.util.parsing.combinator._
 import scala.annotation.tailrec
-import io.ByteCode
 import parser._
 import ClassFileParser._
 
@@ -12,7 +11,7 @@ case class ParsedPool(pool: constant_pool) {
   def referencedPackages = referencedClasses uniqmap (_.toPackage)
 
   def formatError(index: Int) =
-    error("parse error at index '%d': unexpected '%s'".format(index, pool(index)))
+    sys.error("parse error at index '%d': unexpected '%s'".format(index, pool(index)))
   
   private def asType[T](pf: cp_info =>? T): Int => T =
     (index: Int) =>

@@ -37,8 +37,17 @@ trait ByteInterpretation extends BinaryParsers {
   def toInt(bytes: Seq[Byte]): Int
   def toLong(bytes: Seq[Byte]): Long
   
+  private def fromUTF8(bytes: Array[Byte]): Array[Char] = {
+    val bbuffer = java.nio.ByteBuffer wrap bytes
+    val cbuffer = scala.io.Codec.UTF8 decode bbuffer
+    val chars = new Array[Char](cbuffer.remaining())
+    cbuffer get chars
+    
+    chars
+  }
+  
   /** Even this isn't a sure thing thanks to "Modified UTF-8" */
-  def toUTF8String(bytes: Seq[Byte]) = Codec toUTF8 bytes.toArray mkString
+  def toUTF8String(bytes: Seq[Byte]) = fromUTF8(bytes.toArray).mkString
   
   /** A reasonable supposition */
   def toFloat(xs: Seq[Byte]) = intBitsToFloat(toInt(xs))

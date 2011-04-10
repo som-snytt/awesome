@@ -3,15 +3,16 @@ package jvm
 
 import attr.{ InnerClass, InnerClasses, Exceptions, ScalaSig }
 import ClassFileParser.{ constant_pool, cp_class }
+import scalap.ScalapModel
 
 case class ClassFile private[jvm] (
   pool: ParsedPool,
   thisClass: ClassInfo,
   allFields: List[FieldInfo],
   allMethods: List[MethodInfo]
-) extends ScalaSigAttributed {
+) extends ScalaSigAnnotated {
   
-  def className = name
+  def className = name.toExternal
   def allClasses = attributes flatMap { case InnerClasses(xs) => xs ; case _ => Nil }
   def allMembers: List[Member] = thisClass :: allFields ::: allMethods ::: allClasses
   
@@ -54,5 +55,6 @@ case class ClassFile private[jvm] (
     else _ => true
 
   def show = println(toString)
-  override def toString = ClassFilePrettyPrinter(this)
+  def toScalapString = ScalapModel.classNamePrettyPrint(className)
+  override def toString = toScalapString
 }

@@ -103,16 +103,17 @@ sealed trait Flags {
   }
 
   def hasFlag(f: Int) = (flags & f) != 0
+  def setFlags = allFlags filter hasFlag
 
-  def isAbstract = this hasFlag ACC_ABSTRACT
+  def isAbstract   = this hasFlag ACC_ABSTRACT
   def isAnnotation = this hasFlag ACC_ANNOTATION
-  def isEnum = this hasFlag ACC_ENUM
-  def isFinal = this hasFlag ACC_FINAL
-  def isInterface = this hasFlag ACC_INTERFACE
-  def isNative = this hasFlag ACC_NATIVE
-  def isStatic = this hasFlag ACC_STATIC
-  def isStrict = this hasFlag ACC_STRICT
-  def isSynthetic = this hasFlag ACC_SYNTHETIC
+  def isEnum       = this hasFlag ACC_ENUM
+  def isFinal      = this hasFlag ACC_FINAL
+  def isInterface  = this hasFlag ACC_INTERFACE
+  def isNative     = this hasFlag ACC_NATIVE
+  def isStatic     = this hasFlag ACC_STATIC
+  def isStrict     = this hasFlag ACC_STRICT
+  def isSynthetic  = this hasFlag ACC_SYNTHETIC
   
   /** Overloaded flags verify what kind of construct these flags are from */
   def isBridge        =  isMethod && (this hasFlag ACC_BRIDGE)
@@ -123,9 +124,9 @@ sealed trait Flags {
   def isVolatile      = !isMethod && (this hasFlag ACC_VOLATILE)  
   
   /** Access flags */
-  def isPublic = this hasFlag ACC_PUBLIC
-  def isProtected = this hasFlag ACC_PROTECTED
-  def isPrivate = this hasFlag ACC_PRIVATE
+  def isPublic         = this hasFlag ACC_PUBLIC
+  def isProtected      = this hasFlag ACC_PROTECTED
+  def isPrivate        = this hasFlag ACC_PRIVATE
   def isPackagePrivate = !isPublic && !isProtected && !isPrivate
   
   def accessFlagsCount = List(isPublic, isProtected, isPrivate) filter (_ == true) size
@@ -159,7 +160,7 @@ sealed trait Flags {
     case ACC_ANNOTATION   => "<annotation>"
     case ACC_ENUM         => "<enum>"
   }
-  
+
   override def toString = spaceSepString(annotationStr, accessString, otherStr)
 }
 

@@ -114,7 +114,7 @@ class Pool() extends PoolwideMethods {
     
   trait Entry {
     private var _book: Bookkeeping = null
-    def book = Option(_book) getOrElse error("Bookkeeping not set in: " + this)
+    def book = Option(_book) getOrElse sys.error("Bookkeeping not set in: " + this)
     def withBook(b: Bookkeeping): this.type = {
       _book = b
       this
@@ -196,7 +196,7 @@ class Pool() extends PoolwideMethods {
       if (lazyEvaluation == null) {
         lazyEvaluation = p(new ByteReader(bytes)) match {
           case Success(x, _)      => x
-          case NoSuccess(msg, _)  => error("Lazy evaluation failed on %s: '%s'".format(this, msg))
+          case NoSuccess(msg, _)  => sys.error("Lazy evaluation failed on %s: '%s'".format(this, msg))
         }
       }
       

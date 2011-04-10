@@ -101,7 +101,7 @@ class ScalaSigParser(val pool: Pool)
     implicit def anyval2constant[T <: AnyVal](x: T): Entry = mkConstant(x)
     implicit def lift[T <: Entry](p: Parser[T]): Entry = p(xs) match {
       case Success(x, _)      => x
-      case NoSuccess(msg, _)  => error("parse error in tag '%s': %s\nInput was: %s".format(Constants(tag), msg, xs.toString))
+      case NoSuccess(msg, _)  => sys.error("parse error in tag '%s': %s\nInput was: %s".format(Constants(tag), msg, xs.toString))
     }
     
     // Laziness in the trunk unpickler:
@@ -179,7 +179,7 @@ class ScalaSigParser(val pool: Pool)
       /** Trees (still TODO): 49 */
       case TREE               => RawTree(xs.head, xs.tail)
       
-      case _                  => error("Unknown Scala signature tag " + tag)
+      case _                  => sys.error("Unknown Scala signature tag " + tag)
     }
     
     res withBook Bookkeeping(tag, xs)
@@ -209,6 +209,10 @@ class ScalaSigParser(val pool: Pool)
 
 
 object ScalaSigParser {
-  def apply(xs: Seq[Byte]) = (new ScalaSigParser())(xs)
+  def apply(xs: Seq[Byte]) = {
+    val p = new ScalaSigParser()
+    p.parse(p.scalaSig, xs)
+  }
+  // def apply(xs: Seq[Byte]) = (new ScalaSigParser())(xs)
   // def justBytes(xs: Seq[Byte]) = (new ScalaSigParser()).justBytes(xs)
 }

@@ -85,7 +85,9 @@ object Ident extends (String => Ident) {
     "scala.collection.immutable.Vector" -> "Vector",
     "scala.collection.mutable.StringBuilder" -> "StringBuilder",
     "scala.collection.immutable.Range" -> "Range",
-    "scala.collection.generic.CanBuildFrom" -> "CanBuildFrom"
+    "scala.collection.generic.CanBuildFrom" -> "CanBuildFrom",
+    "scala.runtime.Nothing$" -> "Nothing",
+    "sclaa.runtime.Null$" -> "Null"
   ) ++
   // just for noise reduction
   Map(
@@ -106,12 +108,12 @@ object Ident extends (String => Ident) {
     def tpString = tparamsToString(typeArgs)
     def tp(x: Int) = typeArgs(x)
 
-    def isObject = name == "java.lang.Object" || name == "AnyRef"
-    def isTuple = name startsWith "scala.Tuple"
-    def isFunction = name startsWith "scala.Function"
+    def isObject          = name == "java.lang.Object" || name == "AnyRef"
+    def isTuple           = name startsWith "scala.Tuple"
+    def isFunction        = name startsWith "scala.Function"
     def isPartialFunction = name startsWith "scala.PartialFunction"
-    def isCollection = name startsWith "scala.collection."
-    def isBoxed = (name startsWith "java.lang.") && (Base.boxedNames contains name.stripPrefix("java.lang."))
+    def isCollection      = name startsWith "scala.collection."
+    def isBoxed           = (name startsWith "java.lang.") && (Base.boxedNames contains name.stripPrefix("java.lang."))
     
     if (isObject) "AnyRef"
     else if (isTuple && typeArgs.nonEmpty) paramsToString(typeArgs)

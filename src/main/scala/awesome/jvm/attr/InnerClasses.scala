@@ -27,7 +27,7 @@ case class InnerClass(
   def id = innerClass getOrElse Ident("<anon inner class>")
   def attributes = Nil
   type SigType = Nothing
-  def createSignature = _ => error("Inner classes do not have signatures")
+  def createSignature = _ => sys.error("Inner classes do not have signatures")
 
   override lazy val sig = None
   override def unqualifiedName = innerName map (_.toUnqualified) getOrElse "<anon>"

@@ -1,11 +1,13 @@
-package awesome
-package io
+package awesome.scalap
+
+import java.io.IOException
+import awesome.Ident
 
 object ByteCode {
   def apply(name: String): Array[Byte] =
-    name.stripSuffix(".class").clazzOpt map apply getOrElse Array()
+    Ident(name.stripSuffix(".class")).clazzOpt map apply getOrElse Array()
 
-  def apply(clazz: JClass[_]): Array[Byte] = {
+  def apply(clazz: Class[_]): Array[Byte] = {
     val name = clazz.getName
     val subPath = name.substring(name.lastIndexOf('.') + 1) + ".class"
     val in = clazz.getResourceAsStream(subPath)

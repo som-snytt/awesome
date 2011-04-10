@@ -4,8 +4,7 @@ import io.Jars
 import pickler.{ Show, ScalaSig, ScalaSigParser }
 import java.util.jar.JarEntry
 
-object Main
-{
+object Main {
   /** ClassFile */
   def cf(name: String) = pcf(name).process
   def cfs(name: String) = CF(name).toList
