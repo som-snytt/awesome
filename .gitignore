@@ -1,10 +1,4 @@
-/dist
-/classes
-/out
-/test
-/doc
 /local
-/asm
 *.class
 target
 project/boot
