@@ -77,7 +77,8 @@ object ScalaFormatter extends Formatter {
   }
   def returnType(m: MethodInfo) = m.reflectReturnType match {
     case Some(t)  => javaTypeToString(t)
-    case _        => asmTypeToString(asmReturnType(m.descriptor.text))
+    case _        => "" + m.descriptor.returnType
+    // case _        => asmTypeToString(asmReturnType(m.descriptor.text))
   }
   def throws(m: MethodInfo): String = ""  
 

@@ -17,8 +17,8 @@ protected[awesome] trait Types {
   val HashMap = scala.collection.mutable.HashMap
   
   // Some commonly reused names we want to globally disambiguate
-  type ASMType = org.objectweb.asm.Type
-  type ASMMethod = org.objectweb.asm.commons.Method
+  // type ASMType = org.objectweb.asm.Type
+  // type ASMMethod = org.objectweb.asm.commons.Method
   
   type JClass[T] = java.lang.Class[T]
   type JType = java.lang.reflect.Type

@@ -7,8 +7,8 @@ class AwesomeProject(info: ProjectInfo) extends DefaultProject(info) with assemb
   override def mainClass = Some("awesome.Main")
   
   val scalap    = "org.scala-lang" % "scalap" % "2.8.1" // withSources()
-  val paranamer = "com.thoughtworks.paranamer" % "paranamer" % "2.3"
-  val asm       = "asm" % "asm-debug-all" % "3.3"
+  // val paranamer = "com.thoughtworks.paranamer" % "paranamer" % "2.3"
+  // val asm       = "asm" % "asm-debug-all" % "3.3"
 
 	override def libraryDependencies = super.libraryDependencies ++ (
 	  info.buildScalaVersion match {

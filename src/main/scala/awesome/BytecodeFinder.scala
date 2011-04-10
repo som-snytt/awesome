@@ -1,6 +1,5 @@
 package awesome
 
-import org.objectweb.asm.ClassReader
 import java.lang.{ ClassLoader => JavaClassLoader }
 import scala.tools.nsc.util.ScalaClassLoader
 import scala.tools.nsc.io.File
