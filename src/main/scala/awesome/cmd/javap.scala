@@ -1,11 +1,7 @@
 package awesome
 package cmd
 
-import scala.tools.nsc.io.File
-import io.{ Jar, Jars }
-import jvm.ClassFileParser
-import jvm.attr.{ InnerClasses, InnerClass }
-import scala.tools.nsc.io._
+import scala.tools.nsc.io.{ File, Path }
 import awesome.scalap.ByteCode
 import awesome.jvm.ClassFileParser
 

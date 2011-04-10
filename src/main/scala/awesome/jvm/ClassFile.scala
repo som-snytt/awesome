@@ -19,7 +19,7 @@ case class ClassFile private[jvm] (
   def methods = allMethods filter methodFilter sorted
   def fields = allFields filter fieldFilter sortBy (_.toString)
   def classes = allClasses filter (_.innerClass.isDefined) sortBy (_.toString)
-  def members = methods ::: fields ::: classes
+  def members = fields ++ methods ++ classes
   
   def referencedClasses = pool.referencedClasses
   def referencedPackages = pool.referencedPackages
@@ -55,6 +55,7 @@ case class ClassFile private[jvm] (
     else _ => true
 
   def show = println(toString)
-  def toScalapString = ScalapModel.classNamePrettyPrint(className)
-  override def toString = toScalapString
+  override def toString = thisClass.toString  // XXX
+  // def toScalapString = ScalapModel.classNamePrettyPrint(className)
+  // override def toString = toScalapString
 }

@@ -3,13 +3,16 @@ package awesome.scalap
 import java.lang.{ ClassLoader => JavaClassLoader }
 import scala.tools.nsc.util.ScalaClassLoader
 import scala.tools.scalap._
-import Main.{ SCALA_SIG, SCALA_SIG_ANNOTATION, BYTES_VALUE }
 import scalax.rules.{ scalasig => sp }
 import sp.{ ClassFile, ClassFileParser, ScalaSig, ScalaSigParser, ScalaSigAttributeParsers, StringBytesPair }
 import ClassFileParser.{ ConstValueIndex, Annotation }
 import scala.reflect.generic.{ ByteCodecs, PickleBuffer }
 
 object ScalaSigFinder {  
+  val SCALA_SIG            = "ScalaSig"
+  val SCALA_SIG_ANNOTATION = "Lscala/reflect/ScalaSignature;"
+  val BYTES_VALUE          = "bytes"
+  
   def defaultLoaders = List[ScalaClassLoader](
     ScalaClassLoader.getSystemLoader,
     new JavaClassLoader(Thread.currentThread.getContextClassLoader) with ScalaClassLoader
