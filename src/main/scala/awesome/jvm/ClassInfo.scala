@@ -188,19 +188,20 @@ case class ClassInfo(
 
   lazy val clazz: JClass[_] = name.clazz
   lazy val companion = ClassFileParser(name.toCompanion).get.process
-  def clazzName = clazz.getName
-  def className = name.toExternal
 
-  def isScalaObject = isScala && (name endsWith "$")
+  def clazzName       = clazz.getName
+  def className       = name.toExternal
+  def isScalaObject   = isScala && (name endsWith "$")
   def enclosingMethod = findAttr({ case x: EnclosingMethod => x })
 
-  private lazy val jclass = new JavaClass(clazz)
-  lazy val reflectMethods = jclass.methods
-  lazy val reflectConstructors = jclass.constructors
-  lazy val reflectInterfaces = jclass.interfaces
-  lazy val reflectEnclosingClass = jclass.enclosingClass
+  private lazy val jclass         = new JavaClass(clazz)
+
+  lazy val reflectMethods         = jclass.methods
+  lazy val reflectConstructors    = jclass.constructors
+  lazy val reflectInterfaces      = jclass.interfaces
+  lazy val reflectEnclosingClass  = jclass.enclosingClass
   lazy val reflectEnclosingMethod = jclass.enclosingMethod
-  lazy val reflectDeclaringClass = jclass.declaringClass
+  lazy val reflectDeclaringClass  = jclass.declaringClass
 
   // def declaringClass: Option[ClassInfo] = {
   //   // if this is primitive None
@@ -211,7 +212,7 @@ case class ClassInfo(
   /** These methods mimic the java reflection implementation logic.
    *  See doc/jvm.cpp and other files in doc/ for details.
    */
-  def enclosingClass: Option[JClass[_]] = {
+  def enclosingClass: JClass[_] = {
     // There are five kinds of classes (or interfaces):
     // a) Top level classes
     // b) Nested classes (static member classes)
@@ -224,11 +225,11 @@ case class ClassInfo(
     // anonymous class.
     reflectEnclosingMethod match {
       // This is a top level or a nested class or an inner class (a, b, or c)
-      case None     => reflectDeclaringClass
+      case NoMethod => reflectDeclaringClass
       // This is a local class or an anonymous class (d or e)
-      case Some(m)  => reflectEnclosingClass match {
-        case None | Some(`clazz`) => sys.error("Malformed enclosing method information")
-        case x                      => x
+      case m => reflectEnclosingClass match {
+        case NoClass | `clazz` => sys.error("Malformed enclosing method information")
+        case x                 => x
       }
     }
   }
@@ -236,7 +237,7 @@ case class ClassInfo(
   def simpleName =
     if (clazz.isArray) clazz.getComponentType.getSimpleName + "[]"
     else simpleBinaryName match {
-      case None   => clazzName drop ((clazzName lastIndexOf '.') + 1) // strip package
+      case ""   => clazzName drop ((clazzName lastIndexOf '.') + 1) // strip package
       // According to JLS3 "Binary Compatibility" (13.1) the binary
       // name of non-package classes (not top level) is the binary
       // name of the immediately enclosing class followed by a '$' followed by:
@@ -250,19 +251,21 @@ case class ClassInfo(
       // followed by a simple name (considering the simple of an
       // anonymous class to be the empty string).
 
-      case Some(str) =>
-        if (str == "" || str(0) != '$') sys.error(s"Malformed class name: $clazzName")
-        // This ends up as the empty string iff this is an anonymous class
-        else str.tail dropWhile (ch => '0' <= ch && ch <= '9')
+      // This ends up as the empty string iff this is an anonymous class
+      case str if str.head != '$' => sys.error(s"Malformed class name: $clazzName")
+      case str                    => str.tail dropWhile (ch => '0' <= ch && ch <= '9')
   }
 
-  def canonicalName =
-    if (clazz.isArray) Option(clazz.getComponentType.getCanonicalName) map (_ + "[]")
-    else if (isLocalOrAnonymousClass) None
+  def canonicalName: String = (
+    if (clazz.isArray)
+      clazz.getComponentType.getCanonicalName match { case null => NoName ; case n => s"$n[]" }
+    else if (isLocalOrAnonymousClass)
+      NoName
     else enclosingClass match {
-      case None     => clazzName
-      case Some(ec) => Option(ec.getCanonicalName) map (_ + "." + simpleName)
+      case NoClass => clazzName
+      case ec      => ec.getCanonicalName match { case null => NoName ; case n => s"$n.$simpleName" }
     }
+  )
 
   def isTopLevel = enclosingClass.isEmpty
   def isNestedClass = enclosingClass.isDefined
@@ -270,10 +273,10 @@ case class ClassInfo(
   // These are direct translations of the java implementations.
   def isAnonymousClass = try simpleName == "" catch { case _: RuntimeException => false }
   def isLocalClass     = isLocalOrAnonymousClass && !isAnonymousClass
-  def isMemberClass    = simpleBinaryName.isDefined && !isLocalOrAnonymousClass
+  def isMemberClass    = (simpleBinaryName != NoName) && !isLocalOrAnonymousClass
 
-  private def isLocalOrAnonymousClass = enclosingMethod.isDefined
-  private def simpleBinaryName        = enclosingClass map (x => clazz.getName drop x.getName.length)
+  private def isLocalOrAnonymousClass  = enclosingMethod.isDefined
+  private def simpleBinaryName: String = if (clazz.isEmpty) NoName else clazz.getName drop enclosingClass.getName.length
 
   private def validateEnclosingMethod =
     if (enclosingMethod.isDefined == (isLocalClass || isAnonymousClass)) Nil
