@@ -7,19 +7,19 @@ import scala.reflect.NameTransformer
 
 trait PoolwideMethods {
   self: Pool =>
-  
+
   class PoolWithContext(val entries: List[Entry]) {
     val pool = self
-    
+
     private val entryArray = entries.toArray
     private val names = new Array[String](entryArray.size)
     private val indices = 0 until entryArray.size
     private def entriesWhere(pf: Entry =>? Entry): List[Entry] = entries collect pf
-    
+
     def isComplete(index: Int) = names(index) != null
     def isAllComplete = names forall (_ != null)
     def completeStats = "%d / %d".format(indices filter isComplete size, entryArray.size)
-    
+
     def tagAt(index: Int)   = { entryArray(index).tag }
     def entryAt(index: Int) = { entryArray(index) }
     def nameAt(index: Int)  = { complete(index) ; Option(names(index)) }
@@ -34,13 +34,13 @@ trait PoolwideMethods {
     def typeNames   = entriesWhere { case x: TypeName => x } uniqsortBy (_.toName)
     def types       = entriesWhere { case x: TypeEntry => x }
 
-    def allNames    = termNames ::: typeNames  
+    def allNames    = termNames ::: typeNames
     def literals    = entries filter isLiteral
 
     def methodTypes = entriesWhere {
       case x: MethodType => x
       case x: PolyType => x
-      case x: ImplicitMethodType => x
+      // case x: ImplicitMethodType => x
     }
     def isRefinementSymbolEntry(index: Int) = entryAt(index) match {
       case ClassSym(SymInfo(x, _, _, _, _), _)  => x.toName == "<refinement>"
@@ -64,7 +64,7 @@ trait PoolwideMethods {
         false
       }
       else if (!isComplete(index)) {
-        val entry = entryArray(index)      
+        val entry = entryArray(index)
         entry.refs foreach (x => complete(x, index :: seen))
 
         if (entry.refs forall isComplete) {
@@ -75,10 +75,10 @@ trait PoolwideMethods {
       }
       else false
     }
-    
+
     /* Constructor */
     indices foreach complete
-  }  
+  }
 }
 
 
@@ -96,7 +96,7 @@ class Pool() extends PoolwideMethods {
   private var context: PoolWithContext = _
   def nameAt(index: Int) = Option(context) flatMap (_ nameAt index) orElse Some("???")
   def isSymbolRef(index: Int): Option[Boolean] = Option(context) map (_ isSymbolRef index) orElse Some(false)
-  
+
   def createContext(entries: List[Entry]): PoolWithContext = {
     val res = new PoolWithContext(entries)
     context = res
@@ -106,12 +106,12 @@ class Pool() extends PoolwideMethods {
   case class Flags(flags: Long) {
     override def toString = flagsToString(flags)
   }
-  
+
   def toNames(xs: List[Entry]) = xs map (_.toName) mkString ", "
 
   case class Bookkeeping(tag: Int, bytes: Seq[Byte]) { }
   // , startIndex: Int) { }
-    
+
   trait Entry {
     private var _book: Bookkeeping = null
     def book = Option(_book) getOrElse sys.error("Bookkeeping not set in: " + this)
@@ -132,21 +132,21 @@ class Pool() extends PoolwideMethods {
       case x: Named           => x.name.toName
       case x: SingletonEntry  => x.toName
       case x                  => tagName
-    } 
+    }
     // def refs: List[Ref[_]]
     // def refidx = refs map (_.index)
     def refs: List[Int]
-    
+
     override def toString = NameTransformer.decode(toName)
   }
-  
+
   trait Owned extends Entry {
     def owner: SymRef
   }
   trait Named extends Entry {
     def name: NameRef
   }
-  
+
   trait SingletonEntry extends Entry {
     // override def toName = toString
     override def refs = Nil
@@ -158,20 +158,20 @@ class Pool() extends PoolwideMethods {
   }
   trait AnnotInfoEntry extends InfoEntry[AnnotInfoBody] {
     def entryInfo: AnnotInfoBody
-    lazy val AnnotInfoBody(infoRef, args, assocs) = entryInfo    
+    lazy val AnnotInfoBody(infoRef, args, assocs) = entryInfo
     override def refs = entryInfo.refs
   }
   trait SymEntry extends InfoEntry[SymInfo] with Owned with Named {
     def entryInfo: SymInfo
     lazy val SymInfo(name, owner, flags, privateWithin, infoRef) = entryInfo
-    
+
     override def toName = name.toName
     override def refs = entryInfo.refs
   }
   trait NameEntry extends InfoEntry[NameInfo] {
     def entryInfo: NameInfo
     lazy val NameInfo(name) = entryInfo
-    
+
     override def toName = name
     override def refs = Nil
   }
@@ -190,7 +190,7 @@ class Pool() extends PoolwideMethods {
   }
   case class LazyEntry[T <: Entry](override val tag: Int, bytes: Seq[Byte], parser: ScalaSigParser, p: ScalaSigParser#Parser[T]) extends Entry {
     import parser._
-    
+
     private var lazyEvaluation: Entry = null
     private def complete: Entry = {
       if (lazyEvaluation == null) {
@@ -199,10 +199,10 @@ class Pool() extends PoolwideMethods {
           case NoSuccess(msg, _)  => sys.error("Lazy evaluation failed on %s: '%s'".format(this, msg))
         }
       }
-      
+
       lazyEvaluation
     }
-  
+
     override def isLazy = true
     override def toName = complete.toName
     override def refs = complete.refs
@@ -210,7 +210,7 @@ class Pool() extends PoolwideMethods {
 
   case class TermName(entryInfo: NameInfo) extends NameEntry {
     // override def toName = "term " + super.toName
-  } 
+  }
   case class TypeName(entryInfo: NameInfo) extends NameEntry {
     // override def toName = super.toName
   }
@@ -224,7 +224,7 @@ class Pool() extends PoolwideMethods {
     override def toName = "alias " + super.toName
   }
   // case class ClassSym(entryInfo: SymInfo, thistpe: Option[ThisTypeRef]) extends SymEntry {
-  case class ClassSym(entryInfo: SymInfo, thistpe: Option[LazyTypeRef]) extends SymEntry {  
+  case class ClassSym(entryInfo: SymInfo, thistpe: Option[LazyTypeRef]) extends SymEntry {
     // override def toName = "class " + super.toName
     override def refs = Nil
     // These need be commented out for toName to work as is
@@ -239,7 +239,7 @@ class Pool() extends PoolwideMethods {
     override def toName = super.toName + getterString
     override def refs = super.refs ::: refIndices(List(defaultGetter, alias).flatten)
   }
-  
+
   trait ExtEntry extends Entry with Named {
     def name: NameRef
     // def owner: Option[SymRef]
@@ -254,7 +254,7 @@ class Pool() extends PoolwideMethods {
     override def refs = refidx(name)
     // override def refs = refidx(name :: owner.toList : _*)
   }
-  
+
   case class ExtRef(name: NameRef) extends ExtEntry
   case class ExtRefWithOwner(name: NameRef, owner: SymRef) extends ExtEntry with Owned {
     override def refs = refidx(name, owner)
@@ -285,7 +285,7 @@ class Pool() extends PoolwideMethods {
   case class TypeRefType(prefix: TypeRef, sym: SymRef, args: List[TypeRef]) extends TypeEntry {
     private def prefixString: String = if (prefix.isNoPrefix || prefix.isPredef) "" else prefix.toName + "."
     private def argsString: String = if (args.isEmpty) "" else "[" + toNames(args) + "]"
-    
+
     override def toName = prefixString + sym.toName + argsString
     // override def refs = refidx(prefix, sym)
     override def refs = refidx(prefix :: sym :: args : _*)
@@ -313,10 +313,10 @@ class Pool() extends PoolwideMethods {
     override def toName = typeParamString + " => " + resultType.toName
     override def refs = refidx(resultType :: typeParams : _*)
   }
-  case class ImplicitMethodType(params: List[SymRef], resultType: TypeRef) extends TypeEntry {
-    override def toName = "implicit (%s) => %s".format(toNames(params), resultType.toName)
-    override def refs = refidx(resultType :: params : _*)
-  }
+  // case class ImplicitMethodType(params: List[SymRef], resultType: TypeRef) extends TypeEntry {
+  //   override def toName = "implicit (%s) => %s".format(toNames(params), resultType.toName)
+  //   override def refs = refidx(resultType :: params : _*)
+  // }
   case class DeBruijnIndexType(level: Int, paramId: Int) extends TypeEntry {
     override def toName = "<param %d.%d>".format(level, paramId)
     override def refs = Nil
@@ -334,18 +334,18 @@ class Pool() extends PoolwideMethods {
     override def toName = tp.toName + annotString
     override def refs = refidx(List[Ref[_]](tp) ::: staticAnnots ::: selfsym.toList: _*)
   }
-  
+
   case class AnnotInfo(annot: AnnotInfoBody) extends ConstAnnotArg {
     lazy val AnnotInfoBody(infoRef, args, assocs) = annot
-    private def assocString = 
+    private def assocString =
       if (assocs.isEmpty) ""
       else (assocs map { case (k, v) => k.toName + "=" + v.toName }).mkString("(", ", ", ")")
-      
+
     override def toName = "@%s%s%s".format(
       infoRef.toName,
       if (args.isEmpty) "" else toNames(args),
       assocString
-    )    
+    )
     override def refs = annot.refs
   }
   case class AnnotArgArray(args: List[ConstAnnotArgRef]) extends ConstAnnotArg {
@@ -365,7 +365,7 @@ class Pool() extends PoolwideMethods {
   trait ConstantValueEntry extends Entry with AnnotArg with ConstAnnotArg {
     override def refs = Nil
   }
-  
+
   case class Constant[T](override val tag: Int, value: T) extends ConstantValueEntry {
     override def toName = value.toString
   }
@@ -397,17 +397,17 @@ class Pool() extends PoolwideMethods {
   trait LazyRef[T <: Entry, U <: Ref[T]] extends Ref[T] {
     def ref: U
     private var evaluated = false
-    
-    override def toName = 
+
+    override def toName =
       if (evaluated) process.toName
       else "<%d: lazy>".format(index)
-      
+
     override lazy val process: Entry = {
       evaluated = true
       ref.process
     }
   }
-  
+
   case class TypeRef(index: Int) extends Ref[TypeEntry] {
     def isNoPrefix = toName == NoPrefix.toName
     def isPredef = toName == "Predef"
@@ -455,11 +455,11 @@ class Pool() extends PoolwideMethods {
     privateWithin: Option[SymRef],
     infoRef: Ref[Entry]
   ) extends Info {
-    
+
     override def refs = name :: owner :: privateWithin.toList
     // def refs = refidx(refNames: _*)
     // def refs = refidx(name, infoRef: _*)
-      
+
     // def refs = refidx(List[Ref[_]](name) ::: List(infoRef) ::: privateWithin.toList : _*)
     // def refs = refIndices(List(name, owner, infoRef) ::: privateWithin.toList)
   }
@@ -467,7 +467,7 @@ class Pool() extends PoolwideMethods {
   case class NameInfo(name: String) extends Info {
     def refs = Nil
     def qname: String = "\"" + name + "\""
-  
+
     override def toString = name
   }
 
@@ -476,11 +476,11 @@ class Pool() extends PoolwideMethods {
     args: List[AnnotArgRef],
     assocs: List[(NameRef, ConstAnnotArgRef)]
   ) extends Info {
-    
+
     type SomeRef = Ref[_ <: Entry]
     private lazy val assocRefs: List[SomeRef] = assocs flatMap { case (k, v) => List(k, v) }
     // private lazy val argRefs: List[Ref[_]] = args
-    
+
     def refs: List[SomeRef] = (infoRef: SomeRef) :: (args: List[SomeRef]) ::: (assocRefs: List[SomeRef])
   }
 }

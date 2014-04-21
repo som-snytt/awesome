@@ -12,7 +12,7 @@ import scala.annotation.tailrec
  */
 trait BinaryParsers extends Parsers {
   type Elem = Byte
-  
+
   /** The standard library parsers are written with the assumption that end of stream
    *  can be recognized with inband data (i.e. EofCh) which is not true for binary data.
    *  So we are forced to override the methods which may encounter end of stream and
@@ -20,7 +20,7 @@ trait BinaryParsers extends Parsers {
    */
   private def eofWrapper[T](p: Parser[T], alt: Input => ParseResult[T]): Parser[T] = Parser { in =>
     try p(in)
-    catch { case ParserEOFException => alt(in) }      
+    catch { case ParserEOFException => alt(in) }
   }
 
   override def acceptIf(p: Elem => Boolean)(err: Elem => String): Parser[Elem] =
@@ -36,19 +36,12 @@ trait BinaryParsers extends Parsers {
 trait ByteInterpretation extends BinaryParsers {
   def toInt(bytes: Seq[Byte]): Int
   def toLong(bytes: Seq[Byte]): Long
-  
-  private def fromUTF8(bytes: Array[Byte]): Array[Char] = {
-    val bbuffer = java.nio.ByteBuffer wrap bytes
-    val cbuffer = scala.io.Codec.UTF8 decode bbuffer
-    val chars = new Array[Char](cbuffer.remaining())
-    cbuffer get chars
-    
-    chars
-  }
-  
+
+  private def fromUTF8(bytes: Array[Byte]): Array[Char] = scala.io.Codec.fromUTF8(bytes)
+
   /** Even this isn't a sure thing thanks to "Modified UTF-8" */
   def toUTF8String(bytes: Seq[Byte]) = fromUTF8(bytes.toArray).mkString
-  
+
   /** A reasonable supposition */
   def toFloat(xs: Seq[Byte]) = intBitsToFloat(toInt(xs))
   def toDouble(xs: Seq[Byte]) = longBitsToDouble(toLong(xs))
@@ -65,7 +58,7 @@ trait StandardByteInterpretation extends ByteInterpretation {
  */
 trait PicklerByteInterpretation extends ByteInterpretation {
   def toInt(xs: Seq[Byte]): Int = xs.foldLeft(0)((x, b) => (x << 7) + (b & 0x7F))
-  def toLong(xs: Seq[Byte]): Long = xs.foldLeft(0L)((x, b) => (x << 7) + (b & 0x7F))  
+  def toLong(xs: Seq[Byte]): Long = xs.foldLeft(0L)((x, b) => (x << 7) + (b & 0x7F))
 }
 
 trait StandardBinaryParsers extends BinaryParsers with ByteInterpretation with ParserUtil {
@@ -76,7 +69,7 @@ trait StandardBinaryParsers extends BinaryParsers with ByteInterpretation with P
   lazy val u4f: Parser[Float] = u4 ^^ intBitsToFloat
   lazy val u8: Parser[Long] = bytes(8) ^^ toLong
   lazy val u8d: Parser[Double] = u8 ^^ longBitsToDouble
-  
+
   /** Parse a single byte. */
   lazy val byte: Parser[Byte] = anyElem
 
@@ -85,12 +78,12 @@ trait StandardBinaryParsers extends BinaryParsers with ByteInterpretation with P
     if (n <= in.length) Success(in take n, in drop n)
     else Failure("Requested %d bytes but only %d remain".format(n, in.length), in)
   }
-  
+
   protected implicit def readerToByteReader(x: Input): ByteReader = x match {
     case br: ByteReader => br
     case _              => new ByteReader(x)
   }
-  
+
   /** Parse all bytes up to end of stream. */
   lazy val drain: Parser[Seq[Byte]] = Parser { in =>
     Success(in take in.length, in drop in.length)
@@ -100,6 +93,6 @@ trait StandardBinaryParsers extends BinaryParsers with ByteInterpretation with P
   def parse[T](p: Parser[T], in: Seq[Byte]): ParseResult[T] = parse(p, new ByteReader(in))
   def parse[T](p: Parser[T], in: Input): ParseResult[T] = p(in)
   def parse[T](p: Parser[T], in: String): ParseResult[T] = parse(p, new ByteReader(in))
-    
+
   def parseAll[T](p: Parser[T], in: Seq[Byte]) = parse(phrase(p), in)
 }

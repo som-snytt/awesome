@@ -10,9 +10,9 @@ import scala.reflect.NameTransformer
 class ScalapSigPrinter {
   def printPrivates = false
   val sb = new StringBuilder
-  
+
   implicit object _tf extends TypeFlags(false)
-  
+
   def print(x: Any) = sb append x
   def println(x: Any) = {
     sb append x
@@ -22,7 +22,7 @@ class ScalapSigPrinter {
   val CONSTRUCTOR_NAME = "<init>"
 
   case class TypeFlags(printRep: Boolean)
-  
+
   def typeString(t: Type): String = {
     sb.clear()
     printType(t)
@@ -169,7 +169,7 @@ class ScalapSigPrinter {
         val printer = new ScalaSigPrinter(stream, printPrivates)
         printer.printMethodType(m.infoType, false)(())
         baos.toString
-      case None =>
+      case _ =>
         ""
     }
   }
@@ -219,14 +219,15 @@ class ScalapSigPrinter {
       })
 
       // Print parameter clauses
-      print(paramEntries.mkString(
-        "(" + (mt match {case _: ImplicitMethodType => "implicit "; case _ => ""})
-        , ", ", ")"))
+      print(paramEntries.mkString("(", ", ", ")"))
+
+        // "(" + (mt match {case _: ImplicitMethodType => "implicit "; case _ => ""})
+        // , ", ", ")"))
 
       // Print result type
       mt.resultType match {
         case mt: MethodType => printMethodType(mt, printResult)({})
-        case imt: ImplicitMethodType => printMethodType(imt, printResult)({})
+        // case imt: ImplicitMethodType => printMethodType(imt, printResult)({})
         case x => if (printResult) {
           print(" : ");
           printType(x)
@@ -236,7 +237,7 @@ class ScalapSigPrinter {
 
     t match {
       case mt@MethodType(resType, paramSymbols) => _pmt(mt)
-      case mt@ImplicitMethodType(resType, paramSymbols) => _pmt(mt)
+      // case mt@ImplicitMethodType(resType, paramSymbols) => _pmt(mt)
       case pt@PolyType(mt, typeParams) => {
         print(typeParamString(typeParams))
         printMethodType(mt, printResult)({})
@@ -382,7 +383,7 @@ class ScalapSigPrinter {
       case ClassInfoTypeWithCons(symbol, typeRefs, cons) => sep + typeRefs.map(toString).
               mkString(cons + " extends ", " with ", "")
 
-      case ImplicitMethodType(resultType, _) => toString(resultType, sep)
+      // case ImplicitMethodType(resultType, _) => toString(resultType, sep)
       case MethodType(resultType, _) => toString(resultType, sep)
 
       case PolyType(typeRef, symbols) => typeParamString(symbols) + toString(typeRef, sep)
