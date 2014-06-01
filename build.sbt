@@ -1,8 +1,8 @@
 lazy val root = project in file(".") settings (
                          name := "awesome",
                  organization := "org.improving",
-                      version := "0.5.5-SNAPSHOT",
-                 scalaVersion := "2.11.0",
+                      version := "0.5.6-SNAPSHOT",
+                 scalaVersion := "2.11.1",
   mainClass in (Compile, run) := Some("awesome.Main"),
    initialCommands in console := "import awesome._",
           libraryDependencies ++= Seq(
