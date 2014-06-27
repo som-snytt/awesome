@@ -9,6 +9,8 @@ package object awesome extends pkg.Constants
   implicit val identOrdering: Ordering[Ident] = Ordering[String] on (_.name)
   implicit def string2ident(s: String): Ident = Ident(s)
 
+  val ASM5 = org.objectweb.asm.Opcodes.ASM5
+
   val NoClass  = classOf[awesome.NoClass]
   val NoMethod = NoClass.getDeclaredMethods.head
   val NoName   = "<none>"

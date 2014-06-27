@@ -6,6 +6,7 @@ lazy val root = project in file(".") settings (
   mainClass in (Compile, run) := Some("awesome.Main"),
    initialCommands in console := "import awesome._",
           libraryDependencies ++= Seq(
+            "org.ow2.asm"             % "asm-debug-all"            %      "5.0.3",
             "org.scala-lang.modules" %% "scala-parser-combinators" %      "1.0.1",
             "org.scala-lang"          % "scala-reflect"            % scalaVersion.value,
             "org.scala-lang"          % "scalap"                   % scalaVersion.value

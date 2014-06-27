@@ -2,9 +2,8 @@ package awesome
 package asm
 
 import org.objectweb.asm._
-import org.objectweb.asm.util.{ ASMifierClassVisitor, TraceMethodVisitor, CheckSignatureAdapter, CheckClassAdapter }
+import org.objectweb.asm.util.{ ASMifier, TraceMethodVisitor, CheckSignatureAdapter, CheckClassAdapter }
 import org.objectweb.asm.signature.{ SignatureVisitor, SignatureReader }
-import commons.EmptyVisitor
 import visitor._
 import Opcodes._
 import awesome.jvm.{ Descriptor, Signature, FieldSignature, MethodSignature, ClassSignature }
@@ -15,7 +14,7 @@ object Model {
   case class EnclosingClass(owner: String, name: String, desc: Descriptor) { }
 
   case class Class(
-    access: Int, 
+    access: Int,
     name: String,
     signatureText: String = "",
     superName: String = "??",
@@ -36,17 +35,17 @@ object Model {
   case class Flags(flags: Int) { }
 
   case class InnerClass(
-    name: String, 
-    outerName: String, 
+    name: String,
+    outerName: String,
     innerName: String,
     access: Int
   )
 
   case class Method(
     owner: Option[Class],
-    access: Int, 
-    name: String, 
-    desc: Descriptor, 
+    access: Int,
+    name: String,
+    desc: Descriptor,
     signatureText: String = "",
     exceptions: List[String] = Nil
   )
@@ -61,15 +60,15 @@ class Reader(val cr: ClassReader) {
     cr.accept(f(buf), 0)
     buf.toList
   }
-  
+
   def jclass: Class = runVisitor[Class](
-    buf => new EmptyClass {
+    buf => new EmptyVisitor {
       private var cs = new ListBuffer[Class]
       private var ms = new ListBuffer[Method]
       private var fs = new ListBuffer[Field]
       private var jclass: Class = null
-      
-      override def visit(version: Int, access: Int, name: String, signature: String, superName: String, interfaces: Array[String]) { 
+
+      override def visit(version: Int, access: Int, name: String, signature: String, superName: String, interfaces: Array[String]) {
         jclass = Class(access, name, signature, superName, arrayToList(interfaces))
       }
       override def visitInnerClass(name: String, outerName: String, innerName: String, access: Int) {
@@ -98,27 +97,28 @@ class Reader(val cr: ClassReader) {
       }
     }
   ).head
-  
+
   def attributes() = runVisitor[Attribute](
     buf => new EmptyVisitor { override def visitAttribute(attr: Attribute) = buf += attr }
   )
-  
+
   def innerClasses() = runVisitor[InnerClass](
-    buf => new EmptyVisitor { 
+    buf => new EmptyVisitor {
       override def visitInnerClass(name: String, outerName: String, innerName: String, access: Int) =
         buf += InnerClass(name, outerName, innerName, access)
     }
   )
-  
+
   def methodCalls() = runVisitor[MethodCall](
     buf => new EmptyVisitor {
-      override def visitMethodInsn(opcode: Int, owner: String, name: String, desc: String) {
-        super.visitMethodInsn(opcode, owner, name, desc)
-        buf += MethodCall(opcode, owner, name, desc)
+      override def visitMethod(access: Int, name: String, desc: String, signature: String, exceptions: Array[String]) = {
+        super.visitMethod(access, name, desc, signature, exceptions)
+        // XXX
+        // buf += MethodCall(opcode, owner, name, desc)
       }
     }
   )
-  
+
   def methods() = runVisitor[Method](
     buf => new EmptyVisitor {
       override def visitMethod(access: Int, name: String, desc: String, signature: String, exceptions: Array[String]): MethodVisitor = {
@@ -128,7 +128,7 @@ class Reader(val cr: ClassReader) {
       }
     }
   )
-  
+
   def fields() = runVisitor[Field](
     buf => new EmptyVisitor {
       override def visitField(access: Int, name: String, desc: String, signature: String, value: Object) = {
@@ -138,17 +138,17 @@ class Reader(val cr: ClassReader) {
       }
     }
   )
-  
+
   def signatures() = runVisitor[Signature](
     buf => new EmptyVisitor {
       override def visit(version: Int, access: Int, name: String, signature: String, superName: String, interfaces: Array[String]) = {
         val ret = super.visit(version, access, name, signature, superName, interfaces)
         if (signature != null)
           buf += ClassSignature(signature)
-        
+
         ret
       }
-      
+
       override def visitMethod(access: Int, name: String, desc: String, signature: String, exceptions: Array[String]): MethodVisitor = {
         val ret = super.visitMethod(access, name, desc, signature, exceptions)
         if (signature != null)
@@ -172,7 +172,7 @@ class Reader(val cr: ClassReader) {
       }
     }
   )
-  
+
   def sourcefile() = runVisitor[String](
     buf => new EmptyVisitor {
       override def visitSource(source: String, debug: String) =
@@ -184,16 +184,16 @@ class Reader(val cr: ClassReader) {
 
 object Reader {
   private def outWriter = new java.io.PrintWriter(System.out)
-  
+
   def apply(name: String): Reader = new Reader(new ClassReader(name))
   def apply(jclass: JClass[_]): Reader = apply(jclass.getName)
   def apply(xs: Array[Byte]): Reader = new Reader(new ClassReader(xs))
-  
+
   def allnames = Jars.default.classNames
   def all = allnames map Reader.apply
   def allsigs = all.toList flatMap (_.signatures)
   def allsigreaders = allsigs map (x => new SignatureReader(x.text))
-  
+
   def dump(name: String) = CheckClassAdapter.verify(new ClassReader(name), true, outWriter)
   def parse(name: String) = println(new ClassReader(name) getClassName)
 

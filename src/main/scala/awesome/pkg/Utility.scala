@@ -67,9 +67,9 @@ protected[awesome] trait Utility {
 
   //
   def allprops = {
-    import scala.collection.JavaConversions._
+    import scala.collection.JavaConverters._
 
-    val keys = (System.getProperties().propertyNames(): Iterator[_]).asInstanceOf[Iterator[String]]
+    val keys = (System.getProperties().propertyNames().asScala: Iterator[_]).asInstanceOf[Iterator[String]]
     Map(keys.toList map (k => (k, System.getProperty(k))) : _*)
   }
 }
