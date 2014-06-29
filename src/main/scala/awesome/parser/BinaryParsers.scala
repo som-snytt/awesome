@@ -50,24 +50,24 @@ trait ByteInterpretation extends BinaryParsers {
 /** Eight bits to a byte, four bytes to an Int, etc.
  */
 trait StandardByteInterpretation extends ByteInterpretation {
-  def toInt(xs: Seq[Byte]): Int = xs.foldLeft(0)((x, b) => (x << 8) + (b & 0xFF))
+  def toInt(xs: Seq[Byte]): Int   = xs.foldLeft(0)((x, b) => (x << 8) + (b & 0xFF))
   def toLong(xs: Seq[Byte]): Long = xs.foldLeft(0L)((x, b) => (x << 8) + (b & 0xFF))
 }
 
 /** Variable number of bytes, high bit used to signal end of number.
  */
 trait PicklerByteInterpretation extends ByteInterpretation {
-  def toInt(xs: Seq[Byte]): Int = xs.foldLeft(0)((x, b) => (x << 7) + (b & 0x7F))
+  def toInt(xs: Seq[Byte]): Int   = xs.foldLeft(0)((x, b) => (x << 7) + (b & 0x7F))
   def toLong(xs: Seq[Byte]): Long = xs.foldLeft(0L)((x, b) => (x << 7) + (b & 0x7F))
 }
 
 trait StandardBinaryParsers extends BinaryParsers with ByteInterpretation with ParserUtil {
-  lazy val u1: Parser[Int] = byte ^^ (_ & 0xFF)
-  lazy val u2: Parser[Int] = bytes(2) ^^ toInt
-  lazy val u4: Parser[Int] = bytes(4) ^^ toInt
-  lazy val u2c: Parser[Char] = bytes(2) ^^ toInt ^^ (_ & 0xFFFF) ^^ (_.toChar)
-  lazy val u4f: Parser[Float] = u4 ^^ intBitsToFloat
-  lazy val u8: Parser[Long] = bytes(8) ^^ toLong
+  lazy val u1: Parser[Int]     = byte ^^ (_ & 0xFF)
+  lazy val u2: Parser[Int]     = bytes(2) ^^ toInt
+  lazy val u4: Parser[Int]     = bytes(4) ^^ toInt
+  lazy val u2c: Parser[Char]   = bytes(2) ^^ toInt ^^ (_ & 0xFFFF) ^^ (_.toChar)
+  lazy val u4f: Parser[Float]  = u4 ^^ intBitsToFloat
+  lazy val u8: Parser[Long]    = bytes(8) ^^ toLong
   lazy val u8d: Parser[Double] = u8 ^^ longBitsToDouble
 
   /** Parse a single byte. */
